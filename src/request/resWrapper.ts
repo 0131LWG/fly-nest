@@ -6,7 +6,7 @@ const RES_WRAPPER = <T>(data: T, msg: string, code: number): CommonRes<T> => ({
   code,
 });
 
-export const SUCCESS_RES = <T>(data: T, msg = 'success') => {
+export const SUCCESS_RES = <T>(data?: T, msg = 'success') => {
   return RES_WRAPPER(data, msg, 200);
 };
 

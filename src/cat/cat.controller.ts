@@ -6,7 +6,10 @@ import {
   Delete,
   Put,
   Param,
+  Query,
   HttpCode,
+  DefaultValuePipe,
+  ParseIntPipe,
   HttpException,
   HttpStatus,
 } from '@nestjs/common';
@@ -37,15 +40,19 @@ export class CatController {
     },
   })
   async post(@Body() createCatDto: CreateCatDto) {
-    return SUCCESS_RES(this.catsService.post(createCatDto), 'success');
+    await this.catsService.post(createCatDto);
+    return SUCCESS_RES();
   }
 
   @Get('list')
   @ApiOperation({
     summary: '获取所有猫',
   })
-  async list() {
-    return SUCCESS_RES(this.catsService.list());
+  async list(
+    @Query('current', new DefaultValuePipe(1), ParseIntPipe) current: number,
+    @Query('pageSize', new DefaultValuePipe(10), ParseIntPipe) pageSize: number,
+  ) {
+    return SUCCESS_RES(await this.catsService.list(current, pageSize));
   }
 
   @Get('get/:id')
@@ -53,7 +60,7 @@ export class CatController {
     summary: '获取一只猫',
   })
   async get(@Param('id') id: number) {
-    return SUCCESS_RES(this.catsService.get(id));
+    return SUCCESS_RES(await this.catsService.get(id));
   }
 
   @Delete('delete/:id')
@@ -61,7 +68,10 @@ export class CatController {
     summary: '删除一只猫',
   })
   async delete(@Param('id') id: number) {
-    return SUCCESS_RES(this.catsService.delete(id));
+    const res = await this.catsService.delete(id);
+    if (res.affected === 0)
+      throw new HttpException('id错误', HttpStatus.NOT_FOUND);
+    return SUCCESS_RES();
   }
 
   @Put('update')
@@ -69,10 +79,11 @@ export class CatController {
   @ApiOperation({
     summary: '更新猫信息',
   })
-  put(@Body() updateCatDto: UpdateCatDto) {
-    const res = this.catsService.put(updateCatDto);
+  async put(@Body() updateCatDto: UpdateCatDto) {
+    const res = await this.catsService.put(updateCatDto);
     // 手动控制错误提示
-    if (!res) throw new HttpException('cat is not found', HttpStatus.NOT_FOUND);
-    return SUCCESS_RES(res);
+    if (res.affected === 0)
+      throw new HttpException('id错误', HttpStatus.NOT_FOUND);
+    return SUCCESS_RES();
   }
 }
